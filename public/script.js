@@ -15,8 +15,14 @@ navigator.mediaDevices.getUserMedia({
     addVideoStream(myVideo, stream)
 
     myPeer.on('call', call => {
-        call.answer(stream)
-        const video = document.createElement('video')
+        call.answer(stream)        
+        const userId = call.peer;
+        const video = document.createElement('video')        
+
+        peers[userId] = {
+            call,
+            video
+        }
 
         call.on('stream', userVideoStream => {
             addVideoStream(video, userVideoStream)
@@ -28,12 +34,8 @@ navigator.mediaDevices.getUserMedia({
     })
 })
 
-socket.on('user-disconnected', userId => {
-    // HACK:  handle potential race condition on close
-    if (peers[userId]) {
-        peers[userId].close()
-        console.log("socket.on('user-disconnected'): end call for user id", userId);
-    }
+socket.on('user-disconnected', userId => {    
+    cleanupCall(userId)
 })
 
 myPeer.on('open', id => {
@@ -50,23 +52,23 @@ function addVideoStream(video, stream) {
 
 function connectToNewUser(userId, stream) {
     const call = myPeer.call(userId, stream)
-    const video = document.createElement('video')
+    const video = document.createElement('video')    
 
-    peers[userId] = call
+    peers[userId] = {
+        call,
+        video
+    }
 
     call.on('stream', userVideoStream => {
         addVideoStream(video, userVideoStream)
     })
 
-    call.on('close', () => {
-        // // HACK: handle potential race condition on close
-        // if (peers[userId]) {
-        //     peers[userId].close()
-        //     console.log("call.on('close'): end call for user id", userId);
-        // }
-
-        video.remove()
+    call.on('close', () => {        
     })
+}
 
-    console.log("add call to peers object for user id: ", userId);    
+function cleanupCall(userId) {    
+    peers[userId].call.close()
+    peers[userId].video.remove()
+    delete peers[userId]
 }

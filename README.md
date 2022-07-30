@@ -9,3 +9,8 @@ Uses the following libraries:
 - `socket.io` - for Web Sockets
 - `peer.js` - for Web RTC and peer-to-peer handling
 - `nodemon` - for server hot reload
+
+To run `peerjs` as a server, install as a global npm package, then run:
+```
+peerjs --port 3001
+```
